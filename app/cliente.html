@@ -208,7 +208,7 @@
     } else {
       $("kpis").innerHTML = kpi("Capital invertido", L.fmtUSD(c.capital), "") +
         kpi("Esquema de rendimiento", c.esquema.label, c.cicloDetalle||"") +
-        kpi("Pago del periodo", L.fmtUSD(L.pagoPeriodoActual(c)), c.esquema.periodicidad==="trimestral"?"Trimestral":"Mensual") +
+        kpi("Pago del periodo", L.fmtUSD(L.pagoPeriodoActual(c)), c.esquema.periodicidad.charAt(0).toUpperCase()+c.esquema.periodicidad.slice(1)) +
         kpi("Próximo pago", c.proximoPago?L.fmtUSD(c.proximoPago.monto):"—", c.proximoPago?L.fmtFecha(c.proximoPago.fecha):"") +
         kpi("Rendimiento anual aprox.", Math.round(L.rendimientoAnual(c)*1000)/10+"%", "Anualizado");
     }
@@ -262,7 +262,7 @@
     var labels=proy.map(function(p){ return meses[new Date(p.fecha+"T00:00:00").getMonth()]; });
     var data=proy.map(function(p){ return p.monto; });
     var grad=ctx.createLinearGradient(0,0,0,300); grad.addColorStop(0,"rgba(183,215,194,.35)"); grad.addColorStop(1,"rgba(183,215,194,0)");
-    var tipo=c.esquema.periodicidad==="trimestral"?"line":"bar";
+    var tipo=c.esquema.periodicidad==="mensual"?"bar":"line";
     chart=new Chart(ctx,{type:tipo,data:{labels:labels,datasets:[{label:"Pago proyectado (USD)",data:data,
       backgroundColor:tipo==="bar"?"rgba(183,215,194,.55)":grad,borderColor:"#B7D7C2",borderWidth:2,fill:tipo==="line",tension:.35,pointBackgroundColor:"#FF6463",pointRadius:tipo==="line"?4:0,borderRadius:6}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(it){return L.fmtUSD(it.parsed.y);}}}},

@@ -28,6 +28,8 @@
       email: userToEmail(c.username), username: String(c.username || "").trim().toLowerCase(),
       codigo: c.codigo || null, nombre: c.nombre,
       capital: c.capital || 0, esquema: c.esquema,
+      tasa: c.tasa != null ? c.tasa : null, pago_periodo: c.pagoPeriodo != null ? c.pagoPeriodo : null,
+      tasa_mensual: c.tasaMensual != null ? c.tasaMensual : null, tasa_trimestral: c.tasaTrimestral != null ? c.tasaTrimestral : null,
       capital_mensual: c.capitalMensual || null, capital_trimestral: c.capitalTrimestral || null,
       pago_mensual: c.pagoMensual || null, pago_trimestral: c.pagoTrimestral || null,
       proximo_pago_fecha: c.proximoPagoFecha || null, proximo_pago_monto: c.proximoPagoMonto || null,
@@ -121,9 +123,15 @@
     function seed() {
       var src = (global.SCG_DATA && global.SCG_DATA.clientes) || [];
       return src.map(function (c) {
+        // Mapear esquema viejo del demo (mensual_2 / trimestral_7 / mixto) al modelo nuevo
+        var oldId = c.esquema && c.esquema.id, esq = "mensual", tasa = null, tasaM = null, tasaT = null, pagoPer = null;
+        if (oldId === "trimestral_7") { esq = "trimestral"; tasa = 0.07; pagoPer = c.pagoTrimestral || null; }
+        else if (oldId === "mixto") { esq = "mixto"; tasaM = 0.02; tasaT = 0.07; }
+        else { esq = "mensual"; tasa = 0.02; pagoPer = c.pagoMensual || null; }
         return {
           id: c.id, username: c.id, email: userToEmail(c.id), codigo: c.codigo, nombre: c.nombre,
-          capital: c.capital || 0, esquema: c.esquema.id,
+          capital: c.capital || 0, esquema: esq, tasa: tasa, pago_periodo: pagoPer,
+          tasa_mensual: tasaM, tasa_trimestral: tasaT,
           capital_mensual: c.capitalMensual || null, capital_trimestral: c.capitalTrimestral || null,
           pago_mensual: c.pagoMensual || null, pago_trimestral: c.pagoTrimestral || null,
           proximo_pago_fecha: c.proximoPago ? c.proximoPago.fecha : null,
