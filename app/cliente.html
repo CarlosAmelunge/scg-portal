@@ -113,7 +113,6 @@
       <dl id="detalles" class="divide-y" style="border-color:rgba(183,215,194,.12)"></dl>
     </div>
 
-    <div id="fondo" class="panel rounded-2xl p-7 mb-6"></div>
     <footer class="text-center text-xs py-6" style="color:#6f8a7c">SCG · Santa Cruz Consulting Group · Santa Cruz de la Sierra, Bolivia · Documento privado y confidencial</footer>
   </div>
 </section>
@@ -247,12 +246,7 @@
     det.push(["Fecha de corte", L.fmtFecha(corte)]);
     if(c.nota) det.push(["Notas", c.nota]);
     $("detalles").innerHTML = det.map(function(d){ return row(d[0],d[1]); }).join("");
-
-    if(settings){
-      $("fondo").classList.remove("hidden");
-      $("fondo").innerHTML = '<h2 class="text-2xl mb-4">Salud del fondo</h2><div class="grid grid-cols-2 sm:grid-cols-3 gap-4">'+
-        miniStat("AUM líquido", L.fmtUSD(settings.aum_liquido))+miniStat("Inversionistas activos", String(settings.inversionistas_activos||"—"))+miniStat("Mes de reporte", settings.mes_reporte||"—")+'</div>';
-    } else { $("fondo").classList.add("hidden"); }
+    // Nota: la "Salud del fondo" (AUM, # inversionistas) NO se muestra al cliente — solo su cuenta.
   }
 
   function renderChart(proy, c){
