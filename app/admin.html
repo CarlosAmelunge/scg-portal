@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es-BO">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCG · Administración</title>
+<script src="../assets/tailwind.js"></script>
+<link rel="stylesheet" href="../assets/brand.css" />
+<style>
+  body { font-family: var(--scg-sans); color: var(--scg-palido); background-color: var(--scg-verde-oscuro);
+    background-image: url('../assets/brand/pattern-vertical.svg'); background-size:520px auto; background-repeat:repeat; background-attachment:fixed; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,.serif { font-family: var(--scg-serif); }
+  .label { font-weight:500; letter-spacing:.14em; text-transform:uppercase; font-size:.66rem; color:#8aa897; }
+  .panel { background: rgba(35,50,48,.82); border:1px solid rgba(183,215,194,.14); backdrop-filter: blur(8px); }
+  .view:not(.active){ display:none !important; }
+  .inp { width:100%; border-radius:.6rem; padding:.6rem .8rem; background:#11201F; border:1px solid rgba(183,215,194,.25); color:#DEE3C3; }
+  .inp:focus { outline:none; border-color:#B7D7C2; }
+  input::placeholder{ color:#6f8a7c; }
+  .btn { border-radius:.6rem; padding:.55rem 1rem; font-weight:600; transition:all .15s ease; cursor:pointer; }
+  .btn-primary{ background:var(--scg-sage); color:var(--scg-verde-oscuro); } .btn-primary:hover{ background:#cfe6d8; }
+  .btn-ghost{ border:1px solid rgba(183,215,194,.3); color:var(--scg-palido); } .btn-ghost:hover{ background:rgba(183,215,194,.12); }
+  .btn-danger{ border:1px solid rgba(255,100,99,.4); color:var(--scg-coral); } .btn-danger:hover{ background:rgba(255,100,99,.12); }
+  table { border-collapse:collapse; }
+  th,td { text-align:left; }
+  .pill { font-size:.66rem; border-radius:9999px; padding:.1rem .5rem; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- LOGIN -->
+<section id="view-login" class="view active min-h-screen flex items-center justify-center px-5 py-12">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8"><img src="../assets/brand/logo-blanco.svg" alt="SCG" class="h-12 mx-auto mb-2" /><p class="label">Administración</p></div>
+    <div class="panel rounded-2xl p-8">
+      <h1 class="text-3xl mb-1">Acceso admin</h1>
+      <p class="text-sm mb-6" style="color:#8aa897">Ingrese su usuario y contraseña de administrador.</p>
+      <form id="login-form" autocomplete="off">
+        <label for="usuario" class="label block mb-2">Usuario</label>
+        <input id="usuario" type="text" required autocapitalize="none" placeholder="admin" class="inp" />
+        <label for="password" class="label block mb-2 mt-4">Contraseña</label>
+        <input id="password" type="password" required placeholder="••••••••" class="inp" />
+        <p id="login-msg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></p>
+        <button id="btn-login" type="submit" class="btn btn-primary w-full mt-5">Ingresar</button>
+      </form>
+      <p id="mock-note" class="hidden text-xs mt-4" style="color:#6f8a7c"></p>
+    </div>
+    <div class="text-center mt-6">
+      <a href="./index.html" class="inline-flex items-center gap-1.5 text-sm hover:underline" style="color:#8aa897">← Volver al inicio</a>
+    </div>
+  </div>
+</section>
+
+<!-- NO AUTORIZADO -->
+<section id="view-denied" class="view min-h-screen flex items-center justify-center px-5">
+  <div class="panel rounded-2xl p-8 max-w-md text-center">
+    <h1 class="text-2xl mb-2">Sin permisos</h1>
+    <p class="text-sm mb-6" style="color:#8aa897"><span id="denied-email" class="font-semibold" style="color:var(--scg-palido)"></span> no es administrador.</p>
+    <button id="btn-logout-d" class="btn btn-ghost">Cerrar sesión</button>
+  </div>
+</section>
+
+<!-- PANEL -->
+<section id="view-admin" class="view">
+  <div class="max-w-6xl mx-auto px-5 py-8">
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <div class="flex items-center gap-3"><img src="../assets/brand/logo-blanco.svg" alt="SCG" class="h-9" /><span class="label">Administración</span></div>
+      <div class="flex items-center gap-3">
+        <span id="who" class="text-sm" style="color:#8aa897"></span>
+        <button id="btn-logout" class="btn btn-ghost text-sm">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <!-- Clientes -->
+    <div class="panel rounded-2xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <h2 class="text-2xl">Clientes</h2>
+        <button id="btn-new" class="btn btn-primary text-sm">+ Nuevo cliente</button>
+      </div>
+      <div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="label" style="border-bottom:1px solid rgba(183,215,194,.18)">
+          <th class="py-2 pr-3">Nombre</th><th class="py-2 pr-3">Usuario</th><th class="py-2 pr-3">Esquema</th>
+          <th class="py-2 pr-3 text-right">Capital</th><th class="py-2 pr-3">Estado</th><th class="py-2 text-right">Acciones</th>
+        </tr></thead>
+        <tbody id="cli-body"></tbody>
+      </table></div>
+      <p id="cli-empty" class="hidden text-sm py-4" style="color:#8aa897">Sin clientes.</p>
+    </div>
+
+    <!-- Fondo + Admins -->
+    <div class="grid lg:grid-cols-2 gap-6">
+      <div class="panel rounded-2xl p-6">
+        <h2 class="text-2xl mb-4">Resumen del fondo</h2>
+        <form id="settings-form" class="grid grid-cols-2 gap-3">
+          <div class="col-span-2"><label class="label block mb-1">Mes de reporte</label><input id="s-mes" class="inp" placeholder="Mayo 2026" /></div>
+          <div><label class="label block mb-1">Fecha de corte</label><input id="s-fecha" type="date" class="inp" /></div>
+          <div><label class="label block mb-1">Inversionistas</label><input id="s-inv" type="number" class="inp" /></div>
+          <div><label class="label block mb-1">AUM líquido (USD)</label><input id="s-aum" type="number" step="0.01" class="inp" /></div>
+          <div><label class="label block mb-1">Activos fijos (USD)</label><input id="s-fijos" type="number" step="0.01" class="inp" /></div>
+          <div class="col-span-2 flex justify-end"><button class="btn btn-primary text-sm">Guardar resumen</button></div>
+        </form>
+        <p id="s-msg" class="hidden text-sm mt-2"></p>
+      </div>
+
+      <div class="panel rounded-2xl p-6">
+        <h2 class="text-2xl mb-4">Administradores</h2>
+        <ul id="adm-list" class="mb-4 divide-y" style="border-color:rgba(183,215,194,.12)"></ul>
+        <form id="adm-form" class="grid gap-2">
+          <input id="adm-usuario" type="text" autocapitalize="none" required placeholder="usuario (ej. ronald)" class="inp" />
+          <div class="flex gap-2">
+            <input id="adm-password" type="text" placeholder="contraseña (mín. 6)" class="inp" />
+            <button class="btn btn-primary text-sm whitespace-nowrap">Agregar</button>
+          </div>
+        </form>
+        <p id="adm-msg" class="hidden text-sm mt-2"></p>
+        <p class="text-xs mt-3" style="color:#6f8a7c">Usuario + contraseña → crea el login y lo hace admin. Si dejás la contraseña vacía, solo se le da permiso de admin (el login debe existir). No se puede borrar el último.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODAL cliente -->
+<div id="modal" class="view fixed inset-0 z-50 items-center justify-center px-4" style="background:rgba(8,14,13,.7); display:none;">
+  <div class="panel rounded-2xl p-6 w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4"><h3 id="m-title" class="text-2xl">Cliente</h3><button id="m-close" class="btn btn-ghost text-sm">✕</button></div>
+    <form id="cli-form" class="grid sm:grid-cols-2 gap-3">
+      <input type="hidden" id="f-id" />
+      <div><label class="label block mb-1">Nombre *</label><input id="f-nombre" required class="inp" /></div>
+      <div><label class="label block mb-1">Usuario * (login)</label><input id="f-usuario" type="text" autocapitalize="none" required placeholder="orlando.vaca" class="inp" /></div>
+      <div><label class="label block mb-1">Código (referencia)</label><input id="f-codigo" class="inp" /></div>
+      <div><label class="label block mb-1">Contraseña <span style="color:#6f8a7c">(opcional)</span></label><input id="f-password" type="text" placeholder="dejar vacío para no cambiar" class="inp" /></div>
+      <div><label class="label block mb-1">Esquema *</label>
+        <select id="f-esquema" class="inp"><option value="mensual_2">2% mensual</option><option value="trimestral_7">7% trimestral</option><option value="mixto">Mixto</option></select>
+      </div>
+      <div><label class="label block mb-1">Capital total (USD)</label><input id="f-capital" type="number" step="0.01" class="inp" /></div>
+      <div><label class="label block mb-1">Estado</label><select id="f-estado" class="inp"><option value="activo">Activo</option><option value="liquidado">Liquidado</option></select></div>
+
+      <div id="grp-mixto" class="sm:col-span-2 grid sm:grid-cols-2 gap-3 hidden">
+        <div><label class="label block mb-1">Capital porción mensual</label><input id="f-cap-m" type="number" step="0.01" class="inp" /></div>
+        <div><label class="label block mb-1">Capital porción trimestral</label><input id="f-cap-t" type="number" step="0.01" class="inp" /></div>
+      </div>
+
+      <div><label class="label block mb-1">Pago mensual (auto)</label><input id="f-pago-m" type="number" step="0.01" class="inp" /></div>
+      <div><label class="label block mb-1">Pago trimestral (auto)</label><input id="f-pago-t" type="number" step="0.01" class="inp" /></div>
+
+      <div id="grp-activo" class="sm:col-span-2 grid sm:grid-cols-3 gap-3">
+        <div><label class="label block mb-1">Próximo pago · fecha</label><input id="f-pp-fecha" type="date" class="inp" /></div>
+        <div><label class="label block mb-1">Próximo pago · monto</label><input id="f-pp-monto" type="number" step="0.01" class="inp" /></div>
+        <div><label class="label block mb-1">Próximo pago · detalle</label><input id="f-pp-det" class="inp" /></div>
+      </div>
+
+      <div id="grp-trim" class="sm:col-span-2 grid sm:grid-cols-3 gap-3 hidden">
+        <div><label class="label block mb-1">Trim. · fecha</label><input id="f-pt-fecha" type="date" class="inp" /></div>
+        <div><label class="label block mb-1">Trim. · monto</label><input id="f-pt-monto" type="number" step="0.01" class="inp" /></div>
+        <div><label class="label block mb-1">Trim. · detalle</label><input id="f-pt-det" class="inp" /></div>
+      </div>
+
+      <div class="sm:col-span-2"><label class="label block mb-1">Ciclo (ej. "Mes 2 de 3")</label><input id="f-ciclo" class="inp" /></div>
+      <div class="sm:col-span-2"><label class="label block mb-1">Nota</label><input id="f-nota" class="inp" /></div>
+
+      <div id="grp-liq" class="sm:col-span-2 grid sm:grid-cols-3 gap-3 hidden">
+        <div><label class="label block mb-1">Liq. · capital</label><input id="f-liq-cap" type="number" step="0.01" class="inp" /></div>
+        <div><label class="label block mb-1">Liq. · interés</label><input id="f-liq-int" type="number" step="0.01" class="inp" /></div>
+        <div><label class="label block mb-1">Liq. · fecha</label><input id="f-liq-fecha" type="date" class="inp" /></div>
+      </div>
+
+      <p id="m-msg" class="sm:col-span-2 hidden text-sm rounded-lg px-3 py-2"></p>
+      <div class="sm:col-span-2 flex justify-end gap-2 mt-2">
+        <button type="button" id="m-cancel" class="btn btn-ghost text-sm">Cancelar</button>
+        <button type="submit" class="btn btn-primary text-sm">Guardar cliente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../assets/data.js"></script>
+<script src="../assets/scg-lib.js"></script>
+<script src="../assets/vendor/supabase.js"></script>
+<script src="../assets/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+  var DB=window.SCG_DB, L=window.SCG_LIB, $=function(id){return document.getElementById(id);};
+  function show(id){ document.querySelectorAll("section.view").forEach(function(v){v.classList.remove("active");}); $(id).classList.add("active"); }
+  function flash(el,text,ok){ el.textContent=text; el.classList.remove("hidden"); el.style.background=ok?"rgba(183,215,194,.12)":"rgba(255,100,99,.12)"; el.style.color=ok?"var(--scg-sage)":"var(--scg-coral)"; }
+
+  if(DB.MOCK){ var n=$("mock-note"); n.classList.remove("hidden"); n.innerHTML="Modo demo (sin backend). Entrá con <code>?mock=1&admin=1</code> para administrar."; }
+
+  // Login
+  $("login-form").addEventListener("submit",function(e){ e.preventDefault();
+    var usuario=$("usuario").value.trim(); var password=$("password").value;
+    if(!usuario||!password) return;
+    $("btn-login").disabled=true; $("btn-login").textContent="Ingresando…";
+    DB.signIn(usuario,password).then(function(){ return start(); })
+    .catch(function(err){ var m=(err&&(err.message||err))+""; if(/invalid login|credentials/i.test(m)) m="Usuario o contraseña incorrectos."; flash($("login-msg"),m,false); })
+    .then(function(){ $("btn-login").disabled=false; $("btn-login").textContent="Ingresar"; });
+  });
+  function logout(){ DB.signOut().then(function(){ window.location.href="./index.html"; }); }
+  $("btn-logout").addEventListener("click",logout); $("btn-logout-d").addEventListener("click",logout);
+
+  // Arranque / post-login
+  function start(){
+    return DB.getEmail().then(function(email){
+      if(!email){ show("view-login"); return; }
+      return DB.isAdmin().then(function(ok){
+        if(!ok){ $("denied-email").textContent=email.split("@")[0]; show("view-denied"); return; }
+        $("who").textContent=email.split("@")[0]; show("view-admin"); loadAll();
+      });
+    });
+  }
+  start();
+
+  function loadAll(){ loadClients(); loadSettings(); loadAdmins(); }
+
+  // ---- Clientes ----
+  function loadClients(){
+    DB.listClients().then(function(rows){
+      var tb=$("cli-body"); tb.innerHTML="";
+      $("cli-empty").classList.toggle("hidden", rows.length>0);
+      rows.forEach(function(r){
+        var uname = r.username || (r.email ? r.email.split("@")[0] : "");
+        var tr=document.createElement("tr"); tr.style.borderBottom="1px solid rgba(183,215,194,.08)";
+        tr.innerHTML='<td class="py-2.5 pr-3 font-medium">'+esc(r.nombre)+'</td>'+
+          '<td class="py-2.5 pr-3 font-mono text-xs">'+esc(uname)+'</td>'+
+          '<td class="py-2.5 pr-3">'+L.esquemaById(r.esquema).label+'</td>'+
+          '<td class="py-2.5 pr-3 text-right">'+L.fmtUSD(r.capital)+'</td>'+
+          '<td class="py-2.5 pr-3">'+(r.estado==="liquidado"?'<span class="pill" style="background:rgba(255,100,99,.15);color:var(--scg-coral)">liquidado</span>':'<span class="pill" style="background:rgba(183,215,194,.15);color:var(--scg-sage)">activo</span>')+'</td>'+
+          '<td class="py-2.5 text-right whitespace-nowrap"></td>';
+        var actions=tr.lastChild;
+        var bE=mkBtn("Editar","btn-ghost"); bE.onclick=function(){ openModal(r); };
+        var bD=mkBtn("Borrar","btn-danger"); bD.style.marginLeft="6px"; bD.onclick=function(){ delClient(r); };
+        actions.appendChild(bE); actions.appendChild(bD);
+        tb.appendChild(tr);
+      });
+    }).catch(function(e){ alert("Error cargando clientes: "+(e.message||e)); });
+  }
+  function mkBtn(txt,cls){ var b=document.createElement("button"); b.className="btn "+cls+" text-xs"; b.textContent=txt; b.style.padding=".35rem .7rem"; return b; }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  function delClient(r){
+    if(!confirm("¿Borrar a "+r.nombre+"? Esta acción no se puede deshacer.")) return;
+    DB.deleteClient(r.id).then(loadClients).catch(function(e){ alert("Error: "+(e.message||e)); });
+  }
+
+  // ---- Modal cliente ----
+  var modal=$("modal");
+  function openModal(r){
+    $("cli-form").reset(); $("m-msg").classList.add("hidden");
+    $("f-id").value = r? r.id : "";
+    $("m-title").textContent = r? "Editar cliente" : "Nuevo cliente";
+    if(r){
+      $("f-nombre").value=r.nombre||""; $("f-usuario").value=r.username||(r.email?r.email.split("@")[0]:""); $("f-codigo").value=r.codigo||"";
+      $("f-esquema").value=r.esquema||"mensual_2"; $("f-capital").value=r.capital!=null?r.capital:"";
+      $("f-estado").value=r.estado||"activo"; $("f-cap-m").value=r.capital_mensual!=null?r.capital_mensual:""; $("f-cap-t").value=r.capital_trimestral!=null?r.capital_trimestral:"";
+      $("f-pago-m").value=r.pago_mensual!=null?r.pago_mensual:""; $("f-pago-t").value=r.pago_trimestral!=null?r.pago_trimestral:"";
+      $("f-pp-fecha").value=r.proximo_pago_fecha||""; $("f-pp-monto").value=r.proximo_pago_monto!=null?r.proximo_pago_monto:""; $("f-pp-det").value=r.proximo_pago_detalle||"";
+      $("f-pt-fecha").value=r.proximo_pago_trim_fecha||""; $("f-pt-monto").value=r.proximo_pago_trim_monto!=null?r.proximo_pago_trim_monto:""; $("f-pt-det").value=r.proximo_pago_trim_detalle||"";
+      $("f-ciclo").value=r.ciclo_detalle||""; $("f-nota").value=r.nota||"";
+      var liq=r.liquidacion||{}; $("f-liq-cap").value=liq.capital!=null?liq.capital:""; $("f-liq-int").value=liq.interes!=null?liq.interes:""; $("f-liq-fecha").value=liq.fecha||"";
+    }
+    syncGroups();
+    modal.classList.add("active"); modal.style.display="flex";
+  }
+  function closeModal(){ modal.classList.remove("active"); modal.style.display="none"; }
+  $("m-close").onclick=closeModal; $("m-cancel").onclick=closeModal;
+  $("btn-new").onclick=function(){ openModal(null); };
+
+  function syncGroups(){
+    var esq=$("f-esquema").value, liq=$("f-estado").value==="liquidado";
+    $("grp-mixto").classList.toggle("hidden", esq!=="mixto");
+    $("grp-trim").classList.toggle("hidden", esq!=="mixto");
+    $("grp-liq").classList.toggle("hidden", !liq);
+    $("grp-activo").classList.toggle("hidden", liq);
+  }
+  function autoPagos(){
+    var p=L.calcularPagos($("f-esquema").value, $("f-capital").value, $("f-cap-m").value, $("f-cap-t").value);
+    if(p.pagoMensual!=null) $("f-pago-m").value=p.pagoMensual;
+    if(p.pagoTrimestral!=null) $("f-pago-t").value=p.pagoTrimestral;
+    // sugerir monto del próximo pago si está vacío
+    if(!$("f-pp-monto").value){ $("f-pp-monto").value = $("f-esquema").value==="trimestral_7" ? (p.pagoTrimestral||"") : (p.pagoMensual||""); }
+  }
+  $("f-esquema").addEventListener("change",function(){ syncGroups(); autoPagos(); });
+  $("f-estado").addEventListener("change",syncGroups);
+  ["f-capital","f-cap-m","f-cap-t"].forEach(function(id){ $(id).addEventListener("input",autoPagos); });
+
+  $("cli-form").addEventListener("submit",function(e){ e.preventDefault();
+    var liq=$("f-estado").value==="liquidado";
+    var usuario=$("f-usuario").value.trim().toLowerCase();
+    var password=$("f-password").value;
+    var obj={
+      id: $("f-id").value || null,
+      nombre: $("f-nombre").value.trim(), username: usuario, codigo: $("f-codigo").value.trim()||null,
+      esquema: $("f-esquema").value, capital: num($("f-capital").value), estado: $("f-estado").value,
+      capitalMensual: num($("f-cap-m").value), capitalTrimestral: num($("f-cap-t").value),
+      pagoMensual: num($("f-pago-m").value), pagoTrimestral: num($("f-pago-t").value),
+      proximoPagoFecha: liq?null:($("f-pp-fecha").value||null), proximoPagoMonto: liq?null:num($("f-pp-monto").value), proximoPagoDetalle: liq?null:($("f-pp-det").value.trim()||null),
+      proximoPagoTrimFecha: $("f-pt-fecha").value||null, proximoPagoTrimMonto: num($("f-pt-monto").value), proximoPagoTrimDetalle: $("f-pt-det").value.trim()||null,
+      cicloDetalle: $("f-ciclo").value.trim()||null, nota: $("f-nota").value.trim()||null,
+      liquidacion: liq ? { capital:num($("f-liq-cap").value), interes:num($("f-liq-int").value), total:(num($("f-liq-cap").value)||0)+(num($("f-liq-int").value)||0), fecha:$("f-liq-fecha").value||null } : null,
+    };
+    if(!obj.nombre||!obj.username){ flash($("m-msg"),"Nombre y usuario son obligatorios.",false); return; }
+    DB.saveClient(obj).then(function(){
+      if(!password) return null;
+      return DB.setCredential(usuario, password)
+        .then(function(){ return "cred-ok"; })
+        .catch(function(err){ throw new Error("Datos guardados, pero la contraseña no se pudo crear: "+(err.message||err)+" (¿desplegaste la Edge Function admin-users?)"); });
+    }).then(function(){ closeModal(); loadClients(); })
+    .catch(function(err){ flash($("m-msg"),(err.message||err)+"",false); loadClients(); });
+  });
+  function num(v){ return v===""||v==null?null:Number(v); }
+
+  // ---- Settings ----
+  function loadSettings(){ DB.getSettings().then(function(s){ if(!s) return;
+    $("s-mes").value=s.mes_reporte||""; $("s-fecha").value=s.fecha_cierre||""; $("s-inv").value=s.inversionistas_activos!=null?s.inversionistas_activos:"";
+    $("s-aum").value=s.aum_liquido!=null?s.aum_liquido:""; $("s-fijos").value=s.activos_fijos!=null?s.activos_fijos:""; }); }
+  $("settings-form").addEventListener("submit",function(e){ e.preventDefault();
+    DB.saveSettings({ mes_reporte:$("s-mes").value.trim()||null, fecha_cierre:$("s-fecha").value||null,
+      inversionistas_activos:num($("s-inv").value), aum_liquido:num($("s-aum").value), activos_fijos:num($("s-fijos").value) })
+    .then(function(){ flash($("s-msg"),"Resumen guardado.",true); }).catch(function(err){ flash($("s-msg"),"Error: "+(err.message||err),false); });
+  });
+
+  // ---- Admins ----
+  function loadAdmins(){ DB.listAdmins().then(function(list){
+    var ul=$("adm-list"); ul.innerHTML="";
+    list.forEach(function(email){
+      var li=document.createElement("li"); li.className="flex items-center justify-between py-2";
+      li.innerHTML='<span class="text-sm">'+esc(email)+'</span>';
+      var b=mkBtn("Quitar","btn-danger"); b.disabled=list.length<=1; if(b.disabled) b.style.opacity=".4";
+      b.onclick=function(){ if(!confirm("¿Quitar admin "+email+"?")) return; DB.removeAdmin(email).then(loadAdmins).catch(function(e){ alert(e.message||e); }); };
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }); }
+  $("adm-form").addEventListener("submit",function(e){ e.preventDefault();
+    var usuario=$("adm-usuario").value.trim(); var password=$("adm-password").value; if(!usuario) return;
+    var p = password ? DB.setCredential(usuario,password) : Promise.resolve();
+    p.then(function(){ return DB.addAdmin(usuario); })
+     .then(function(){ $("adm-usuario").value=""; $("adm-password").value=""; flash($("adm-msg"),"Admin agregado.",true); loadAdmins(); })
+     .catch(function(err){ flash($("adm-msg"),"Error: "+(err.message||err),false); });
+  });
+})();
+</script>
+</body>
+</html>

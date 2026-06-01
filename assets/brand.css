@@ -1,0 +1,38 @@
+/* ============================================================================
+ * SCG · Santa Cruz Consulting Group — Identidad de marca (vendoreada, offline)
+ * Fuente: SCG Brand Kit 2026.
+ *   Tipografía títulos: IvyOra Text (serif)
+ *   Tipografía cuerpo:  Switzer (sans)
+ *   Paleta primaria:  #11201F (verde oscuro) · #B7D7C2 (sage) · #DEE3C3 (pálido)
+ *   Paleta secundaria: #280407 (granate) · #FF6463 (coral) · #233230 (estampado)
+ * ==========================================================================*/
+
+/* ---- IvyOra Text (titulares) ---- */
+@font-face { font-family:'IvyOra Text'; font-weight:300; font-style:normal; font-display:swap; src:url('./brand-fonts/IvyOraText-Light.woff2') format('woff2'); }
+@font-face { font-family:'IvyOra Text'; font-weight:400; font-style:normal; font-display:swap; src:url('./brand-fonts/IvyOraText-Regular.woff2') format('woff2'); }
+@font-face { font-family:'IvyOra Text'; font-weight:400; font-style:italic;  font-display:swap; src:url('./brand-fonts/IvyOraText-RegularItalic.woff2') format('woff2'); }
+@font-face { font-family:'IvyOra Text'; font-weight:500; font-style:normal; font-display:swap; src:url('./brand-fonts/IvyOraText-Medium.woff2') format('woff2'); }
+@font-face { font-family:'IvyOra Text'; font-weight:500; font-style:italic;  font-display:swap; src:url('./brand-fonts/IvyOraText-MediumItalic.woff2') format('woff2'); }
+
+/* ---- Switzer (cuerpo) ---- */
+@font-face { font-family:'Switzer'; font-weight:300; font-style:normal; font-display:swap; src:url('./brand-fonts/Switzer-Light.woff2') format('woff2'); }
+@font-face { font-family:'Switzer'; font-weight:400; font-style:normal; font-display:swap; src:url('./brand-fonts/Switzer-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Switzer'; font-weight:500; font-style:normal; font-display:swap; src:url('./brand-fonts/Switzer-Medium.woff2') format('woff2'); }
+@font-face { font-family:'Switzer'; font-weight:600; font-style:normal; font-display:swap; src:url('./brand-fonts/Switzer-Semibold.woff2') format('woff2'); }
+@font-face { font-family:'Switzer'; font-weight:700; font-style:normal; font-display:swap; src:url('./brand-fonts/Switzer-Bold.woff2') format('woff2'); }
+
+/* ---- Tokens de marca ---- */
+:root {
+  --scg-verde-oscuro: #11201F;
+  --scg-verde-medio:  #233230;
+  --scg-sage:         #B7D7C2;
+  --scg-palido:       #DEE3C3;
+  --scg-granate:      #280407;
+  --scg-coral:        #FF6463;
+  --scg-blanco:       #FFFFFF;
+  --scg-serif: 'IvyOra Text', Georgia, 'Times New Roman', serif;
+  --scg-sans:  'Switzer', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.scg-serif { font-family: var(--scg-serif); }
+.scg-sans  { font-family: var(--scg-sans); }

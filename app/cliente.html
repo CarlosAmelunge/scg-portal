@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es-BO">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCG · Portal de Clientes</title>
+<script src="../assets/tailwind.js"></script>
+<script src="../assets/chart.umd.js"></script>
+<link rel="stylesheet" href="../assets/brand.css" />
+<style>
+  html { scroll-behavior:smooth; }
+  body {
+    font-family: var(--scg-sans); color: var(--scg-palido);
+    background-color: var(--scg-verde-oscuro);
+    background-image: url('../assets/brand/pattern-vertical.svg');
+    background-size: 520px auto; background-repeat: repeat; background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,.serif { font-family: var(--scg-serif); }
+  .label { font-weight:500; letter-spacing:.16em; text-transform:uppercase; font-size:.68rem; color:#8aa897; }
+  .panel { background: rgba(35,50,48,.72); border:1px solid rgba(183,215,194,.14); backdrop-filter: blur(8px); }
+  .panel-solid { background: var(--scg-verde-medio); border:1px solid rgba(183,215,194,.14); }
+  .view:not(.active) { display:none !important; }
+  .view.active { animation: fade .5s ease both; }
+  @keyframes fade { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+  .accent-bar { background: linear-gradient(180deg, var(--scg-sage), var(--scg-coral)); }
+  input::placeholder { color:#6f8a7c; }
+  .btn-primary { background: var(--scg-sage); color: var(--scg-verde-oscuro); transition: all .2s ease; }
+  .btn-primary:hover { background:#cfe6d8; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .btn-ghost { border:1px solid rgba(183,215,194,.3); color:var(--scg-palido); transition: all .2s ease; }
+  .btn-ghost:hover { background: rgba(183,215,194,.12); }
+  @media print { body { background:#fff !important; color:#11201F !important; } .no-print{display:none !important;} .panel,.panel-solid{background:#fff !important; border-color:#11201F33 !important;} }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============ LOGIN ============ -->
+<section id="view-login" class="view active min-h-screen flex items-center justify-center px-5 py-12">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <img src="../assets/brand/logo-blanco.svg" alt="SCG · Santa Cruz Consulting Group" class="h-12 mx-auto mb-2" />
+      <p class="label">Portal de Clientes</p>
+    </div>
+    <div class="panel rounded-2xl p-8 shadow-2xl">
+      <h1 class="text-3xl mb-1">Iniciar sesión</h1>
+      <p class="text-sm mb-6" style="color:#8aa897">Ingrese su usuario y contraseña.</p>
+      <form id="login-form" autocomplete="off">
+        <label for="usuario" class="label block mb-2">Usuario</label>
+        <input id="usuario" name="usuario" type="text" required autocapitalize="none" placeholder="su.usuario"
+          class="w-full rounded-xl px-4 py-3 bg-[#11201F] border border-[rgba(183,215,194,.25)] text-[#DEE3C3] focus:outline-none focus:border-[#B7D7C2] focus:ring-2 focus:ring-[rgba(183,215,194,.25)]" />
+        <label for="password" class="label block mb-2 mt-4">Contraseña</label>
+        <input id="password" name="password" type="password" required placeholder="••••••••"
+          class="w-full rounded-xl px-4 py-3 bg-[#11201F] border border-[rgba(183,215,194,.25)] text-[#DEE3C3] focus:outline-none focus:border-[#B7D7C2] focus:ring-2 focus:ring-[rgba(183,215,194,.25)]" />
+        <p id="login-msg" class="hidden mt-3 text-sm rounded-lg px-3 py-2"></p>
+        <button id="btn-login" type="submit" class="btn-primary w-full mt-5 rounded-xl py-3 font-semibold tracking-wide">Ingresar</button>
+      </form>
+      <p id="mock-note" class="hidden text-xs mt-4" style="color:#6f8a7c"></p>
+    </div>
+    <div class="text-center mt-6">
+      <a href="./index.html" class="inline-flex items-center gap-1.5 text-sm hover:underline" style="color:#8aa897">← Volver al inicio</a>
+    </div>
+    <p class="text-center text-xs mt-4" style="color:#6f8a7c">Cada cliente visualiza únicamente su propia cuenta. SCG no comparte información entre inversionistas.</p>
+  </div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="view-dash" class="view">
+  <div class="max-w-5xl mx-auto px-5 py-8">
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-8 no-print">
+      <img src="../assets/brand/logo-blanco.svg" alt="SCG" class="h-9" />
+      <div class="flex items-center gap-2">
+        <button id="btn-print" type="button" class="btn-ghost rounded-lg px-4 py-2 text-sm font-medium">⤓ Descargar estado</button>
+        <button id="btn-logout" type="button" class="btn-ghost rounded-lg px-4 py-2 text-sm font-medium">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <div class="panel rounded-2xl p-7 mb-6 relative overflow-hidden">
+      <span class="absolute left-0 top-0 bottom-0 w-1.5 accent-bar"></span>
+      <p class="label mb-2">Estado de cuenta privado · Confidencial</p>
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <h1 id="d-nombre" class="text-4xl leading-tight"></h1>
+        <div class="text-right"><p class="label">Fecha de corte</p><p id="d-corte" class="text-lg serif" style="color:var(--scg-sage)"></p></div>
+      </div>
+      <p class="mt-2 text-sm" style="color:#8aa897">Código <span id="d-codigo" class="font-semibold" style="color:var(--scg-palido)"></span> · <span id="d-estado"></span></p>
+    </div>
+
+    <div id="kpis" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
+    <div id="proximo" class="panel-solid rounded-2xl p-7 mb-6 relative overflow-hidden"></div>
+
+    <div id="proj-block" class="panel rounded-2xl p-7 mb-6">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-2xl">Proyección de pagos</h2>
+        <span class="label rounded-full px-3 py-1" style="border:1px solid rgba(183,215,194,.3)">Proyección</span>
+      </div>
+      <p class="text-sm mb-5" style="color:#8aa897">Próximos 12 meses · estimación según su esquema</p>
+      <div class="relative" style="height:300px"><canvas id="chart"></canvas></div>
+      <p class="text-xs mt-4" style="color:#6f8a7c">Series estimadas; no representan rendimiento histórico real. Los desembolsos efectivos dependen del calendario vigente.</p>
+    </div>
+
+    <div id="cal-block" class="panel rounded-2xl p-7 mb-6">
+      <h2 class="text-2xl mb-4">Calendario de pagos</h2>
+      <div class="overflow-x-auto"><table class="w-full text-sm">
+        <thead><tr class="label text-left" style="border-bottom:1px solid rgba(183,215,194,.18)"><th class="py-2 pr-4 font-medium">Fecha</th><th class="py-2 font-medium text-right">Monto</th></tr></thead>
+        <tbody id="cal-body"></tbody>
+      </table></div>
+    </div>
+
+    <div id="liq-block" class="panel rounded-2xl p-7 mb-6 hidden"></div>
+
+    <div class="panel rounded-2xl p-7 mb-6">
+      <h2 class="text-2xl mb-4">Detalles de la cuenta</h2>
+      <dl id="detalles" class="divide-y" style="border-color:rgba(183,215,194,.12)"></dl>
+    </div>
+
+    <div id="fondo" class="panel rounded-2xl p-7 mb-6"></div>
+    <footer class="text-center text-xs py-6" style="color:#6f8a7c">SCG · Santa Cruz Consulting Group · Santa Cruz de la Sierra, Bolivia · Documento privado y confidencial</footer>
+  </div>
+</section>
+
+<!-- ============ ESTADO: sin cuenta ============ -->
+<section id="view-nocuenta" class="view min-h-screen flex items-center justify-center px-5 py-12">
+  <div class="panel rounded-2xl p-8 max-w-md text-center">
+    <img src="../assets/brand/logo-blanco.svg" alt="SCG" class="h-10 mx-auto mb-4" />
+    <h1 class="text-2xl mb-2">Cuenta no encontrada</h1>
+    <p class="text-sm mb-6" style="color:#8aa897">No encontramos una cuenta asociada a <span id="nc-email" class="font-semibold" style="color:var(--scg-palido)"></span>. Si cree que es un error, contacte a SCG Capital.</p>
+    <button id="btn-logout2" class="btn-ghost rounded-lg px-4 py-2 text-sm font-medium">Cerrar sesión</button>
+  </div>
+</section>
+
+<script src="../assets/data.js"></script>
+<script src="../assets/scg-lib.js"></script>
+<script src="../assets/vendor/supabase.js"></script>
+<script src="../assets/supabase.js"></script>
+<script>
+(function(){
+  "use strict";
+  var DB = window.SCG_DB, L = window.SCG_LIB, $ = function(id){ return document.getElementById(id); };
+  var chart = null, settings = null;
+
+  function show(id){ document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); }); $(id).classList.add("active"); window.scrollTo(0,0); }
+  function msg(text, kind){
+    var el = $("login-msg"); el.textContent = text; el.classList.remove("hidden");
+    el.style.background = kind === "ok" ? "rgba(183,215,194,.12)" : "rgba(255,100,99,.12)";
+    el.style.color = kind === "ok" ? "var(--scg-sage)" : "var(--scg-coral)";
+  }
+
+  // Pista de modo demo
+  if (DB.MOCK){ var n=$("mock-note"); n.classList.remove("hidden");
+    n.innerHTML = "Modo demo (sin backend). Para entrar: agregá <code>?mock=1&as=OVP-600</code> a la URL, o configurá Supabase en assets/supabase.js."; }
+
+  // Login
+  $("login-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var usuario = $("usuario").value.trim();
+    var password = $("password").value;
+    if(!usuario || !password) return;
+    $("btn-login").disabled = true; $("btn-login").textContent = "Ingresando…";
+    DB.signIn(usuario, password).then(function(){
+      return start();
+    }).catch(function(err){
+      var m = (err && (err.message||err)) + "";
+      if(/invalid login|credentials/i.test(m)) m = "Usuario o contraseña incorrectos.";
+      msg(m, "err");
+    }).then(function(){ $("btn-login").disabled = false; $("btn-login").textContent = "Ingresar"; });
+  });
+
+  function doLogout(){ DB.signOut().then(function(){ window.location.href = "./index.html"; }); }
+  $("btn-logout").addEventListener("click", doLogout);
+  $("btn-logout2").addEventListener("click", doLogout);
+  $("btn-print").addEventListener("click", function(){ window.print(); });
+
+  // Arranque / post-login
+  function start(){
+    return DB.getSettings().then(function(s){ settings = s; }).catch(function(){})
+      .then(function(){ return DB.getEmail(); })
+      .then(function(email){
+        if(!email){ show("view-login"); return; }
+        return DB.getMyClient().then(function(row){
+          if(!row){ $("nc-email").textContent = (email.split("@")[0]); show("view-nocuenta"); return; }
+          render(L.normalizeRow(row));
+          show("view-dash");
+        });
+      });
+  }
+  start();
+
+  // ---- Render (misma lógica visual que v5-brand) ----
+  function kpi(label, value, sub){
+    return '<div class="panel-solid rounded-2xl p-5"><p class="label mb-2">'+label+'</p>'+
+      '<p class="text-2xl" style="color:var(--scg-palido)">'+value+'</p>'+
+      (sub?'<p class="text-xs mt-1" style="color:#8aa897">'+sub+'</p>':'')+'</div>';
+  }
+  function row(k,v){ return '<div class="flex justify-between gap-4 py-3"><dt class="text-sm" style="color:#8aa897">'+k+'</dt><dd class="text-sm text-right font-medium" style="color:var(--scg-palido)">'+v+'</dd></div>'; }
+  function miniStat(k,v){ return '<div><p class="text-xl serif" style="color:var(--scg-sage)">'+v+'</p><p class="label mt-1">'+k+'</p></div>'; }
+
+  function render(c){
+    var corte = (settings && settings.fecha_cierre) || "2026-05-31";
+    $("d-nombre").textContent = c.nombre;
+    $("d-codigo").textContent = c.codigo || "—";
+    $("d-corte").textContent = L.fmtFecha(corte);
+    var liquidado = c.estado === "liquidado";
+    $("d-estado").innerHTML = liquidado ? '<span style="color:var(--scg-coral)">Cuenta liquidada</span>' : '<span style="color:var(--scg-sage)">Cuenta activa</span>';
+
+    if(liquidado && c.liquidacion){
+      $("kpis").innerHTML = kpi("Capital liquidado", L.fmtUSD(c.liquidacion.capital), "Devuelto en mayo 2026") +
+        kpi("Esquema", c.esquema.label, "") + kpi("Total liquidado", L.fmtUSD(c.liquidacion.total), "Capital + interés final");
+    } else {
+      $("kpis").innerHTML = kpi("Capital invertido", L.fmtUSD(c.capital), "") +
+        kpi("Esquema de rendimiento", c.esquema.label, c.cicloDetalle||"") +
+        kpi("Pago del periodo", L.fmtUSD(L.pagoPeriodoActual(c)), c.esquema.periodicidad==="trimestral"?"Trimestral":"Mensual") +
+        kpi("Próximo pago", c.proximoPago?L.fmtUSD(c.proximoPago.monto):"—", c.proximoPago?L.fmtFecha(c.proximoPago.fecha):"") +
+        kpi("Rendimiento anual aprox.", Math.round(L.rendimientoAnual(c)*1000)/10+"%", "Anualizado");
+    }
+
+    var prox = $("proximo");
+    if(liquidado || !c.proximoPago){ prox.classList.add("hidden"); }
+    else {
+      prox.classList.remove("hidden");
+      var extra = c.proximoPagoTrimestral
+        ? '<div class="mt-4 pt-4 flex flex-wrap justify-between gap-2" style="border-top:1px solid rgba(183,215,194,.18)"><span class="text-sm" style="color:#8aa897">Componente trimestral · '+c.proximoPagoTrimestral.detalle+'</span><span class="font-semibold" style="color:var(--scg-palido)">'+L.fmtUSD(c.proximoPagoTrimestral.monto)+' · '+L.fmtFecha(c.proximoPagoTrimestral.fecha)+'</span></div>'
+        : '';
+      prox.innerHTML = '<span class="absolute left-0 top-0 bottom-0 w-1.5" style="background:var(--scg-coral)"></span>'+
+        '<p class="label mb-3">Próximo desembolso</p><div class="flex flex-wrap items-end justify-between gap-3">'+
+        '<p class="text-5xl serif" style="color:var(--scg-palido)">'+L.fmtUSD(c.proximoPago.monto)+'</p>'+
+        '<div class="text-right"><p class="text-lg serif" style="color:var(--scg-sage)">'+L.fmtFecha(c.proximoPago.fecha)+'</p><p class="text-sm" style="color:#8aa897">'+c.proximoPago.detalle+'</p></div></div>'+extra;
+    }
+
+    if(liquidado){
+      $("proj-block").classList.add("hidden"); $("cal-block").classList.add("hidden");
+      $("liq-block").classList.remove("hidden");
+      $("liq-block").innerHTML = c.liquidacion ? ('<h2 class="text-2xl mb-4">Estado de cuenta final</h2><dl class="divide-y" style="border-color:rgba(183,215,194,.12)">'+
+        row("Capital devuelto", L.fmtUSD(c.liquidacion.capital))+row("Interés final", L.fmtUSD(c.liquidacion.interes))+
+        row("Total liquidado · "+L.fmtFecha(c.liquidacion.fecha), L.fmtUSD(c.liquidacion.total))+'</dl>') : '';
+    } else {
+      $("proj-block").classList.remove("hidden"); $("cal-block").classList.remove("hidden"); $("liq-block").classList.add("hidden");
+      var proy = L.proyectarPagos(c, 12);
+      renderChart(proy, c);
+      $("cal-body").innerHTML = proy.map(function(p){
+        var esProx = c.proximoPago && p.fecha === c.proximoPago.fecha;
+        return '<tr style="border-bottom:1px solid rgba(183,215,194,.08)"><td class="py-2.5 pr-4">'+L.fmtFecha(p.fecha)+(esProx?' <span class="ml-1 text-xs rounded-full px-2 py-0.5" style="background:rgba(255,100,99,.15);color:var(--scg-coral)">Próximo</span>':'')+'</td><td class="py-2.5 text-right '+(p.monto>0?'':'opacity-40')+'" style="color:var(--scg-palido)">'+(p.monto>0?L.fmtUSD(p.monto):'—')+'</td></tr>';
+      }).join("");
+    }
+
+    var det = [["Esquema de rendimiento", c.esquema.label],["Periodicidad", c.esquema.periodicidad.charAt(0).toUpperCase()+c.esquema.periodicidad.slice(1)]];
+    if(c.cicloDetalle) det.push(["Ciclo actual", c.cicloDetalle]);
+    det.push(["Fecha de corte", L.fmtFecha(corte)]);
+    if(c.nota) det.push(["Notas", c.nota]);
+    $("detalles").innerHTML = det.map(function(d){ return row(d[0],d[1]); }).join("");
+
+    if(settings){
+      $("fondo").classList.remove("hidden");
+      $("fondo").innerHTML = '<h2 class="text-2xl mb-4">Salud del fondo</h2><div class="grid grid-cols-2 sm:grid-cols-3 gap-4">'+
+        miniStat("AUM líquido", L.fmtUSD(settings.aum_liquido))+miniStat("Inversionistas activos", String(settings.inversionistas_activos||"—"))+miniStat("Mes de reporte", settings.mes_reporte||"—")+'</div>';
+    } else { $("fondo").classList.add("hidden"); }
+  }
+
+  function renderChart(proy, c){
+    var ctx = $("chart").getContext("2d");
+    if(chart){ chart.destroy(); chart=null; }
+    var meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    var labels=proy.map(function(p){ return meses[new Date(p.fecha+"T00:00:00").getMonth()]; });
+    var data=proy.map(function(p){ return p.monto; });
+    var grad=ctx.createLinearGradient(0,0,0,300); grad.addColorStop(0,"rgba(183,215,194,.35)"); grad.addColorStop(1,"rgba(183,215,194,0)");
+    var tipo=c.esquema.periodicidad==="trimestral"?"line":"bar";
+    chart=new Chart(ctx,{type:tipo,data:{labels:labels,datasets:[{label:"Pago proyectado (USD)",data:data,
+      backgroundColor:tipo==="bar"?"rgba(183,215,194,.55)":grad,borderColor:"#B7D7C2",borderWidth:2,fill:tipo==="line",tension:.35,pointBackgroundColor:"#FF6463",pointRadius:tipo==="line"?4:0,borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(it){return L.fmtUSD(it.parsed.y);}}}},
+      scales:{x:{grid:{color:"rgba(183,215,194,.08)"},ticks:{color:"#8aa897"}},y:{grid:{color:"rgba(183,215,194,.08)"},ticks:{color:"#8aa897",callback:function(v){return "$"+Number(v).toLocaleString("en-US");}}}}}});
+  }
+})();
+</script>
+</body>
+</html>

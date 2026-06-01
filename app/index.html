@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es-BO">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SCG · Portal</title>
+<script src="../assets/tailwind.js"></script>
+<link rel="stylesheet" href="../assets/brand.css" />
+<style>
+  body {
+    font-family: var(--scg-sans); color: var(--scg-palido);
+    background-color: var(--scg-verde-oscuro);
+    background-image: url('../assets/brand/pattern-vertical.svg');
+    background-size: 520px auto; background-repeat: repeat; background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,.serif { font-family: var(--scg-serif); }
+  .label { font-weight:500; letter-spacing:.16em; text-transform:uppercase; font-size:.68rem; color:#8aa897; }
+  .card { background: rgba(35,50,48,.72); border:1px solid rgba(183,215,194,.14); backdrop-filter: blur(8px); transition: all .2s ease; }
+  .card:hover { transform: translateY(-3px); border-color: rgba(183,215,194,.4); background: rgba(35,50,48,.9); }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-5 py-12">
+  <div class="w-full max-w-2xl">
+    <div class="text-center mb-10">
+      <img src="../assets/brand/logo-blanco.svg" alt="SCG · Santa Cruz Consulting Group" class="h-14 mx-auto mb-3" />
+      <p class="label">Portal · Santa Cruz Consulting Group</p>
+    </div>
+
+    <h1 class="text-3xl text-center mb-8" style="color:var(--scg-palido)">¿Cómo querés ingresar?</h1>
+
+    <div class="grid sm:grid-cols-2 gap-5">
+      <a href="./cliente.html" class="card rounded-2xl p-8 text-center block">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl grid place-items-center" style="background:rgba(183,215,194,.14)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B7D7C2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h2 class="text-2xl mb-1" style="color:var(--scg-palido)">Soy cliente</h2>
+        <p class="text-sm" style="color:#8aa897">Acceder a mi cuenta y ver mis resultados.</p>
+        <span class="inline-block mt-4 text-sm font-semibold" style="color:var(--scg-sage)">Ingresar →</span>
+      </a>
+
+      <a href="./admin.html" class="card rounded-2xl p-8 text-center block">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl grid place-items-center" style="background:rgba(183,215,194,.14)">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B7D7C2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h2 class="text-2xl mb-1" style="color:var(--scg-palido)">Administración</h2>
+        <p class="text-sm" style="color:#8aa897">Gestionar clientes, fondo y accesos.</p>
+        <span class="inline-block mt-4 text-sm font-semibold" style="color:var(--scg-sage)">Ingresar →</span>
+      </a>
+    </div>
+
+    <p class="text-center text-xs mt-10" style="color:#6f8a7c">
+      SCG · Santa Cruz de la Sierra, Bolivia · Documento privado y confidencial
+    </p>
+  </div>
+</body>
+</html>
