@@ -80,7 +80,7 @@
       <p class="label mb-2">Estado de cuenta privado · Confidencial</p>
       <div class="flex flex-wrap items-end justify-between gap-3">
         <h1 id="d-nombre" class="text-4xl leading-tight"></h1>
-        <div class="text-right"><p class="label">Fecha de corte</p><p id="d-corte" class="text-lg serif" style="color:var(--scg-sage)"></p></div>
+        <div class="text-right"><p class="label">Actualizado al</p><p id="d-corte" class="text-lg serif" style="color:var(--scg-sage)"></p></div>
       </div>
       <p class="mt-2 text-sm" style="color:#8aa897">Código <span id="d-codigo" class="font-semibold" style="color:var(--scg-palido)"></span> · <span id="d-estado"></span></p>
     </div>
@@ -243,7 +243,7 @@
 
     var det = [["Esquema de rendimiento", c.esquema.label],["Periodicidad", c.esquema.periodicidad.charAt(0).toUpperCase()+c.esquema.periodicidad.slice(1)]];
     if(c.cicloDetalle) det.push(["Ciclo actual", c.cicloDetalle]);
-    det.push(["Fecha de corte", L.fmtFecha(corte)]);
+    det.push(["Actualizado al", L.fmtFecha(corte)]);
     if(c.nota) det.push(["Notas", c.nota]);
     $("detalles").innerHTML = det.map(function(d){ return row(d[0],d[1]); }).join("");
     // Nota: la "Salud del fondo" (AUM, # inversionistas) NO se muestra al cliente — solo su cuenta.
