@@ -201,7 +201,7 @@
   function start(){
     return DB.getEmail().then(function(email){
       if(!email){ show("view-login"); return; }
-      return DB.isAdmin().then(function(ok){
+      return DB.puedePortal().then(function(ok){
         if(!ok){ $("denied-email").textContent=email.split("@")[0]; show("view-denied"); return; }
         $("who").textContent=email.split("@")[0]; show("view-admin"); loadAll();
       });

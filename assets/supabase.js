@@ -73,6 +73,7 @@
       signOut: function () { return client.auth.signOut(); },
       getEmail: function () { return client.auth.getSession().then(function (r) { return r.data.session ? r.data.session.user.email : null; }); },
       isAdmin: function () { return client.rpc("is_admin").then(function (r) { return !!r.data; }); },
+      puedePortal: function () { return client.rpc("puede_portal").then(function (r) { return !!r.data; }); },
       getMyClient: function () {
         return client.from("clients").select("*").limit(1).maybeSingle().then(function (r) {
           if (r.error) throw r.error; return r.data;
@@ -169,6 +170,7 @@
       signOut: function () { sessionUser = null; return P(true); },
       getEmail: function () { return P(sessionUser ? userToEmail(sessionUser) : null); },
       isAdmin: function () { return P(isAdm(sessionUser)); },
+      puedePortal: function () { return P(isAdm(sessionUser)); },
       getMyClient: function () {
         if (isAdm(sessionUser)) return P(state.clients[0]);
         return P(state.clients.find(function (c) { return c.username === sessionUser; }) || null);
