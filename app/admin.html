@@ -86,8 +86,8 @@
       <p id="cli-empty" class="hidden text-sm py-4" style="color:#8aa897">Sin clientes.</p>
     </div>
 
-    <!-- Fondo + Admins -->
-    <div class="grid lg:grid-cols-2 gap-6">
+    <!-- Resumen del fondo -->
+    <div class="max-w-2xl">
       <div class="panel rounded-2xl p-6">
         <h2 class="text-2xl mb-4">Resumen del fondo</h2>
         <form id="settings-form" class="grid grid-cols-2 gap-3">
@@ -99,20 +99,6 @@
           <div class="col-span-2 flex justify-end"><button class="btn btn-primary text-sm">Guardar resumen</button></div>
         </form>
         <p id="s-msg" class="hidden text-sm mt-2"></p>
-      </div>
-
-      <div class="panel rounded-2xl p-6">
-        <h2 class="text-2xl mb-4">Administradores</h2>
-        <ul id="adm-list" class="mb-4 divide-y" style="border-color:rgba(183,215,194,.12)"></ul>
-        <form id="adm-form" class="grid gap-2">
-          <input id="adm-usuario" type="text" autocapitalize="none" required placeholder="usuario (ej. ronald)" class="inp" />
-          <div class="flex gap-2">
-            <input id="adm-password" type="text" placeholder="contraseña (mín. 6)" class="inp" />
-            <button class="btn btn-primary text-sm whitespace-nowrap">Agregar</button>
-          </div>
-        </form>
-        <p id="adm-msg" class="hidden text-sm mt-2"></p>
-        <p class="text-xs mt-3" style="color:#6f8a7c">Usuario + contraseña → crea el login y lo hace admin. Si dejás la contraseña vacía, solo se le da permiso de admin (el login debe existir). No se puede borrar el último.</p>
       </div>
     </div>
   </div>
@@ -223,7 +209,7 @@
   }
   start();
 
-  function loadAll(){ loadClients(); loadSettings(); loadAdmins(); }
+  function loadAll(){ loadClients(); loadSettings(); }
 
   // ---- Clientes ----
   function loadClients(){
@@ -343,24 +329,8 @@
     .then(function(){ flash($("s-msg"),"Resumen guardado.",true); }).catch(function(err){ flash($("s-msg"),"Error: "+(err.message||err),false); });
   });
 
-  // ---- Admins ----
-  function loadAdmins(){ DB.listAdmins().then(function(list){
-    var ul=$("adm-list"); ul.innerHTML="";
-    list.forEach(function(email){
-      var li=document.createElement("li"); li.className="flex items-center justify-between py-2";
-      li.innerHTML='<span class="text-sm">'+esc(email)+'</span>';
-      var b=mkBtn("Quitar","btn-danger"); b.disabled=list.length<=1; if(b.disabled) b.style.opacity=".4";
-      b.onclick=function(){ if(!confirm("¿Quitar admin "+email+"?")) return; DB.removeAdmin(email).then(loadAdmins).catch(function(e){ alert(e.message||e); }); };
-      li.appendChild(b); ul.appendChild(li);
-    });
-  }); }
-  $("adm-form").addEventListener("submit",function(e){ e.preventDefault();
-    var usuario=$("adm-usuario").value.trim(); var password=$("adm-password").value; if(!usuario) return;
-    var p = password ? DB.setCredential(usuario,password) : Promise.resolve();
-    p.then(function(){ return DB.addAdmin(usuario); })
-     .then(function(){ $("adm-usuario").value=""; $("adm-password").value=""; flash($("adm-msg"),"Admin agregado.",true); loadAdmins(); })
-     .catch(function(err){ flash($("adm-msg"),"Error: "+(err.message||err),false); });
-  });
+  // Administradores: el acceso al portal admin se controla desde el CRM (members.role='admin').
+  // La gestión de admins del portal (tabla `admins`) quedó deprecada y se removió de esta pantalla.
 })();
 </script>
 </body>
