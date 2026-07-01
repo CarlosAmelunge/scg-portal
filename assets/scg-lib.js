@@ -108,6 +108,65 @@
     };
   }
 
+  // Extra por única vez al agregar capital a mitad de período (rendimiento prorrateado).
+  // extra = monto * tasa * (díasRestantes / díasDelPeríodo). Se suma al próximo pago de esa bolsa.
+  // fechaAporte y fechaProximoPago en 'YYYY-MM-DD'. mesesPorPeriodo: 1 (mensual) / 3 (trimestral).
+  function prorrateoAporte(monto, tasa, fechaAporte, fechaProximoPago, mesesPorPeriodo) {
+    monto = Number(monto) || 0; tasa = Number(tasa) || 0; mesesPorPeriodo = mesesPorPeriodo || 1;
+    if (!monto || !tasa || !fechaAporte || !fechaProximoPago) return 0;
+    var DIA = 86400000;
+    var pago = new Date(String(fechaProximoPago).slice(0,10) + "T00:00:00");
+    var aporte = new Date(String(fechaAporte).slice(0,10) + "T00:00:00");
+    var inicioPeriodo = new Date(pago.getFullYear(), pago.getMonth() - mesesPorPeriodo, pago.getDate());
+    var diasPeriodo = Math.round((pago - inicioPeriodo) / DIA);
+    if (diasPeriodo <= 0) return 0;
+    var diasRestantes = Math.round((pago - aporte) / DIA);
+    if (diasRestantes < 0) diasRestantes = 0;
+    if (diasRestantes > diasPeriodo) diasRestantes = diasPeriodo;
+    return round2(monto * tasa * (diasRestantes / diasPeriodo));
+  }
+
+  // Recalcula bolsas + pagos + estado de un cliente a partir de sus movimientos.
+  // clientRow: fila snake_case de la BD. movimientos: array de client_movimientos.
+  // Devuelve un patch (snake_case) con los campos a actualizar en el cliente.
+  // NO aplica prorrateo (eso es una sola vez, en addMovimiento). NO fuerza estado='activo'.
+  function recomputarCliente(clientRow, movimientos) {
+    var r = clientRow || {};
+    var movs = movimientos || [];
+    var esq = r.esquema || "mensual";
+    function sumBolsa(filter) {
+      var t = 0;
+      movs.forEach(function (m) {
+        if (!filter(m)) return;
+        var monto = Number(m.monto) || 0;
+        t += (m.tipo === "retiro") ? -monto : monto;
+      });
+      return t < 0 ? 0 : t;
+    }
+    var patch = {};
+    if (esq === "mixto") {
+      var bolsaM = sumBolsa(function (m) { return m.destino === "mensual"; });
+      var bolsaT = sumBolsa(function (m) { return m.destino === "trimestral"; });
+      var tasaM = Number(r.tasa_mensual) || 0;
+      var tasaT = Number(r.tasa_trimestral) || 0;
+      patch.capital_mensual = round2(bolsaM);
+      patch.capital_trimestral = round2(bolsaT);
+      patch.capital = round2(bolsaM + bolsaT);
+      patch.pago_mensual = round2(bolsaM * tasaM);
+      patch.pago_trimestral = round2(bolsaT * tasaT);
+      patch.proximo_pago_monto = patch.pago_mensual;
+      patch.proximo_pago_trim_monto = patch.pago_trimestral;
+    } else {
+      var bolsa = sumBolsa(function () { return true; });
+      var tasa = Number(r.tasa) || 0;
+      patch.capital = round2(bolsa);
+      patch.pago_periodo = round2(bolsa * tasa);
+      patch.proximo_pago_monto = patch.pago_periodo;
+    }
+    if (patch.capital <= 0) patch.estado = "liquidado";
+    return patch;
+  }
+
   // Sugerencia de pagos a partir de capital + tasa (para el admin). Tasas en decimal.
   function calcularPagos(esqId, capital, tasa, capMensual, tasaMensual, capTrimestral, tasaTrimestral) {
     if (esqId === "mixto") {
@@ -122,5 +181,6 @@
     fmtUSD: fmtUSD, fmtFecha: fmtFecha, fmtPct: fmtPct, round2: round2,
     pagoPeriodoActual: pagoPeriodoActual, rendimientoAnual: rendimientoAnual,
     proyectarPagos: proyectarPagos, normalizeRow: normalizeRow, calcularPagos: calcularPagos,
+    prorrateoAporte: prorrateoAporte, recomputarCliente: recomputarCliente,
   };
 })(typeof window !== "undefined" ? window : this);

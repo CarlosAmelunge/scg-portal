@@ -41,6 +41,45 @@
     };
   }
 
+  var LIB = global.SCG_LIB;
+
+  // Aplica el patch base de recomputarCliente y, si el movimiento recién agregado
+  // es un aporte 'prorrateado', suma el extra por única vez al próximo pago de la bolsa.
+  // Devuelve el patch final (snake_case) a persistir sobre el cliente.
+  function patchConMovimiento(clientRow, movimientos, mov) {
+    var patch = LIB.recomputarCliente(clientRow, movimientos);
+    if (!mov || mov.rendimiento !== "prorrateado" || mov.tipo !== "aporte") return patch;
+    var esq = clientRow.esquema || "mensual";
+    var tasa, meses, proxFecha, campoMonto, campoDet, detBase;
+    if (esq === "mixto") {
+      if (mov.destino === "trimestral") {
+        tasa = Number(clientRow.tasa_trimestral) || 0; meses = 3;
+        proxFecha = clientRow.proximo_pago_trim_fecha;
+        campoMonto = "proximo_pago_trim_monto"; campoDet = "proximo_pago_trim_detalle";
+        detBase = clientRow.proximo_pago_trim_detalle;
+      } else {
+        tasa = Number(clientRow.tasa_mensual) || 0; meses = 1;
+        proxFecha = clientRow.proximo_pago_fecha;
+        campoMonto = "proximo_pago_monto"; campoDet = "proximo_pago_detalle";
+        detBase = clientRow.proximo_pago_detalle;
+      }
+    } else {
+      tasa = Number(clientRow.tasa) || 0;
+      meses = (esq === "trimestral") ? 3 : (LIB.esquemaById(esq).mesesPorPeriodo || 1);
+      proxFecha = clientRow.proximo_pago_fecha;
+      campoMonto = "proximo_pago_monto"; campoDet = "proximo_pago_detalle";
+      detBase = clientRow.proximo_pago_detalle;
+    }
+    var extra = LIB.prorrateoAporte(mov.monto, tasa, mov.fecha, proxFecha, meses);
+    if (extra) {
+      var base = patch[campoMonto] != null ? patch[campoMonto] : 0;
+      patch[campoMonto] = LIB.round2(base + extra);
+      var d = (detBase || "").trim();
+      patch[campoDet] = (d ? d + " " : "") + "(incluye aporte prorrateado)";
+    }
+    return patch;
+  }
+
   // =========================================================================
   // BACKEND REAL (Supabase)
   // =========================================================================
@@ -96,6 +135,45 @@
       deleteClient: function (id) {
         return client.from("clients").delete().eq("id", id).then(function (r) { if (r.error) throw r.error; return true; });
       },
+      // ---- admin: movimientos de capital ----
+      listMovimientos: function (clientId) {
+        return client.from("client_movimientos").select("*").eq("client_id", clientId)
+          .order("fecha", { ascending: false }).order("created_at", { ascending: false })
+          .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+      },
+      addMovimiento: function (mov) {
+        var self = this;
+        return client.from("client_movimientos").insert({
+          client_id: mov.client_id, fecha: mov.fecha, tipo: mov.tipo, monto: mov.monto,
+          destino: mov.destino || null, rendimiento: mov.rendimiento || "proximo", detalle: mov.detalle || null,
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          return client.from("clients").select("*").eq("id", mov.client_id).single();
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          var clientRow = r.data;
+          return self.listMovimientos(mov.client_id).then(function (movs) {
+            var patch = patchConMovimiento(clientRow, movs, mov);
+            return client.from("clients").update(patch).eq("id", mov.client_id).select("*").single()
+              .then(function (u) { if (u.error) throw u.error; return u.data; });
+          });
+        });
+      },
+      deleteMovimiento: function (id, clientId) {
+        var self = this;
+        return client.from("client_movimientos").delete().eq("id", id).then(function (r) {
+          if (r.error) throw r.error;
+          return client.from("clients").select("*").eq("id", clientId).single();
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          var clientRow = r.data;
+          return self.listMovimientos(clientId).then(function (movs) {
+            var patch = LIB.recomputarCliente(clientRow, movs);
+            return client.from("clients").update(patch).eq("id", clientId).select("*").single()
+              .then(function (u) { if (u.error) throw u.error; return u.data; });
+          });
+        });
+      },
       saveSettings: function (s) {
         return client.from("settings").upsert(Object.assign({ id: 1 }, s)).then(function (r) { if (r.error) throw r.error; return true; });
       },
@@ -148,7 +226,7 @@
     }
     function load() {
       try { var s = JSON.parse(localStorage.getItem(LS)); if (s && s.clients) return s; } catch (e) {}
-      return { clients: seed(), admins: ["admin"],
+      return { clients: seed(), movimientos: [], admins: ["admin"],
         settings: { id: 1, mes_reporte: "Mayo 2026", fecha_cierre: "2026-05-31",
           aum_liquido: 1688612.18, activos_fijos: 541986.94, inversionistas_activos: 15 } };
     }
@@ -186,6 +264,42 @@
         save(state); return P(true);
       },
       deleteClient: function (id) { state.clients = state.clients.filter(function (c){ return c.id !== id; }); save(state); return P(true); },
+      // ---- movimientos de capital (mock) ----
+      listMovimientos: function (clientId) {
+        if (!state.movimientos) state.movimientos = [];
+        var out = state.movimientos.filter(function (m) { return m.client_id === clientId; }).slice();
+        out.sort(function (a, b) {
+          if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+          return (a.created_at || "") < (b.created_at || "") ? 1 : -1;
+        });
+        return P(out);
+      },
+      addMovimiento: function (mov) {
+        if (!state.movimientos) state.movimientos = [];
+        var row = {
+          id: "mov-" + Math.abs(Date.now() ^ (state.movimientos.length * 2654435761)).toString(16),
+          client_id: mov.client_id, fecha: mov.fecha, tipo: mov.tipo, monto: Number(mov.monto) || 0,
+          destino: mov.destino || null, rendimiento: mov.rendimiento || "proximo",
+          detalle: mov.detalle || null, created_at: new Date().toISOString(),
+        };
+        state.movimientos.push(row);
+        var i = state.clients.findIndex(function (c) { return c.id === mov.client_id; });
+        var clientRow = state.clients[i];
+        var movs = state.movimientos.filter(function (m) { return m.client_id === mov.client_id; });
+        var patch = patchConMovimiento(clientRow, movs, mov);
+        state.clients[i] = Object.assign({}, clientRow, patch);
+        save(state); return P(state.clients[i]);
+      },
+      deleteMovimiento: function (id, clientId) {
+        if (!state.movimientos) state.movimientos = [];
+        state.movimientos = state.movimientos.filter(function (m) { return m.id !== id; });
+        var i = state.clients.findIndex(function (c) { return c.id === clientId; });
+        var clientRow = state.clients[i];
+        var movs = state.movimientos.filter(function (m) { return m.client_id === clientId; });
+        var patch = LIB.recomputarCliente(clientRow, movs);
+        state.clients[i] = Object.assign({}, clientRow, patch);
+        save(state); return P(state.clients[i]);
+      },
       saveSettings: function (s) { state.settings = Object.assign({ id: 1 }, state.settings, s); save(state); return P(true); },
       listAdmins: function () { return P(state.admins.slice()); },
       addAdmin: function (username) { var u = String(username).trim().toLowerCase(); if (state.admins.indexOf(u) < 0) state.admins.push(u); save(state); return P(true); },

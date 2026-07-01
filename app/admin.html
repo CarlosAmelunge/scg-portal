@@ -157,6 +157,25 @@
       <div class="sm:col-span-2"><label class="label block mb-1">Ciclo (ej. "Mes 2 de 3")</label><input id="f-ciclo" class="inp" /></div>
       <div class="sm:col-span-2"><label class="label block mb-1">Nota</label><input id="f-nota" class="inp" /></div>
 
+      <!-- Movimientos de capital (solo al editar un cliente existente) -->
+      <div id="mov-section" class="sm:col-span-2 mt-2 pt-4" style="border-top:1px solid rgba(183,215,194,.14)">
+        <h4 class="label mb-2" style="font-size:.72rem">Movimientos de capital</h4>
+        <p id="mov-hint" class="hidden text-sm" style="color:#8aa897">Guardá el cliente para registrar movimientos.</p>
+        <div id="mov-body" class="hidden">
+          <div id="mov-list" class="text-sm mb-3"></div>
+          <div class="grid sm:grid-cols-6 gap-2 items-end">
+            <div><label class="label block mb-1">Fecha</label><input id="mv-fecha" type="date" class="inp" /></div>
+            <div><label class="label block mb-1">Tipo</label><select id="mv-tipo" class="inp"><option value="aporte">Aporte</option><option value="retiro">Retiro</option></select></div>
+            <div id="mv-destino-wrap" class="hidden"><label class="label block mb-1">Bolsa</label><select id="mv-destino" class="inp"><option value="mensual">Mensual</option><option value="trimestral">Trimestral</option></select></div>
+            <div><label class="label block mb-1">Monto (USD)</label><input id="mv-monto" type="number" step="0.01" min="0" class="inp" /></div>
+            <div class="sm:col-span-2"><label class="label block mb-1">Rendimiento</label><select id="mv-rend" class="inp"><option value="proximo">Desde el próximo período</option><option value="prorrateado">Prorrateado desde la fecha</option></select></div>
+            <div class="sm:col-span-4"><label class="label block mb-1">Detalle</label><input id="mv-detalle" class="inp" placeholder="opcional" /></div>
+            <div class="sm:col-span-2 flex items-end justify-end"><button type="button" id="mv-add" class="btn btn-primary text-sm w-full">Registrar</button></div>
+          </div>
+          <p id="mov-msg" class="hidden text-sm rounded-lg px-3 py-2 mt-2"></p>
+        </div>
+      </div>
+
       <div id="grp-liq" class="sm:col-span-2 grid sm:grid-cols-3 gap-3 hidden">
         <div><label class="label block mb-1">Liq. · capital</label><input id="f-liq-cap" type="number" step="0.01" class="inp" /></div>
         <div><label class="label block mb-1">Liq. · interés</label><input id="f-liq-int" type="number" step="0.01" class="inp" /></div>
@@ -261,6 +280,7 @@
       var liq=r.liquidacion||{}; $("f-liq-cap").value=liq.capital!=null?liq.capital:""; $("f-liq-int").value=liq.interes!=null?liq.interes:""; $("f-liq-fecha").value=liq.fecha||"";
     }
     syncGroups();
+    syncMovSection(r);
     modal.classList.add("active"); modal.style.display="flex";
   }
   function closeModal(){ modal.classList.remove("active"); modal.style.display="none"; }
@@ -318,6 +338,81 @@
   function num(v){ return v===""||v==null?null:Number(v); }
   function pct(v){ var n=num(v); return n!=null?Math.round(n*1e6)/1e8:null; } // % -> decimal
   function dec2pct(d){ return Math.round(Number(d)*1e6)/1e4; } // decimal -> % (sin artefactos)
+
+  // ---- Movimientos de capital ----
+  var curClient=null; // fila del cliente que se está editando (para conocer esquema)
+  function syncMovSection(r){
+    curClient = r || null;
+    var editing = !!(r && r.id);
+    $("mov-hint").classList.toggle("hidden", editing);
+    $("mov-body").classList.toggle("hidden", !editing);
+    if(!editing) return;
+    $("mv-fecha").value = new Date().toISOString().slice(0,10);
+    $("mv-tipo").value="aporte"; $("mv-monto").value=""; $("mv-detalle").value=""; $("mv-rend").value="proximo";
+    $("mov-msg").classList.add("hidden");
+    $("mv-destino-wrap").classList.toggle("hidden", r.esquema!=="mixto");
+    renderMovimientos(r.id);
+  }
+  function fillMoneyFields(c){
+    if(!c) return;
+    curClient = c;
+    $("f-capital").value=c.capital!=null?c.capital:"";
+    $("f-pago-periodo").value=c.pago_periodo!=null?c.pago_periodo:"";
+    $("f-cap-m").value=c.capital_mensual!=null?c.capital_mensual:"";
+    $("f-cap-t").value=c.capital_trimestral!=null?c.capital_trimestral:"";
+    $("f-pago-m").value=c.pago_mensual!=null?c.pago_mensual:"";
+    $("f-pago-t").value=c.pago_trimestral!=null?c.pago_trimestral:"";
+    $("f-pp-monto").value=c.proximo_pago_monto!=null?c.proximo_pago_monto:"";
+    $("f-pp-det").value=c.proximo_pago_detalle||"";
+    $("f-pt-monto").value=c.proximo_pago_trim_monto!=null?c.proximo_pago_trim_monto:"";
+    $("f-pt-det").value=c.proximo_pago_trim_detalle||"";
+    if(c.estado){ $("f-estado").value=c.estado; syncGroups(); }
+  }
+  function renderMovimientos(clientId){
+    var box=$("mov-list"); box.innerHTML="Cargando…";
+    var mixto = curClient && curClient.esquema==="mixto";
+    DB.listMovimientos(clientId).then(function(rows){
+      if(!rows.length){ box.innerHTML='<span style="color:#8aa897">Sin movimientos registrados.</span>'; return; }
+      box.innerHTML="";
+      rows.forEach(function(m){
+        var row=document.createElement("div");
+        row.className="flex items-center justify-between gap-2 py-1.5";
+        row.style.borderBottom="1px solid rgba(183,215,194,.08)";
+        var tipoTxt = m.tipo==="retiro" ? "retiro" : "aporte";
+        var parts=[L.fmtFecha(m.fecha), tipoTxt, L.fmtUSD(m.monto)];
+        if(mixto && m.destino) parts.push(m.destino);
+        if(m.detalle) parts.push(m.detalle);
+        var span=document.createElement("span");
+        span.className="text-sm"; span.style.color=m.tipo==="retiro"?"var(--scg-coral)":"var(--scg-palido)";
+        span.textContent=parts.join(" · ");
+        var b=mkBtn("Borrar","btn-danger"); b.type="button";
+        b.onclick=function(){ if(!confirm("¿Borrar este movimiento?")) return;
+          DB.deleteMovimiento(m.id, clientId).then(function(c){ fillMoneyFields(c); renderMovimientos(clientId); })
+          .catch(function(e){ flash($("mov-msg"),"Error: "+(e.message||e),false); }); };
+        row.appendChild(span); row.appendChild(b); box.appendChild(row);
+      });
+    }).catch(function(e){ box.innerHTML='<span style="color:var(--scg-coral)">Error: '+esc(e.message||e)+'</span>'; });
+  }
+  $("mv-add").addEventListener("click",function(){
+    var clientId = $("f-id").value;
+    if(!clientId) return;
+    var monto = num($("mv-monto").value);
+    if(!(monto>0)){ flash($("mov-msg"),"El monto debe ser mayor a 0.",false); return; }
+    var mixto = curClient && curClient.esquema==="mixto";
+    var mov={
+      client_id: clientId, fecha: $("mv-fecha").value || new Date().toISOString().slice(0,10),
+      tipo: $("mv-tipo").value, monto: monto,
+      destino: mixto ? $("mv-destino").value : null,
+      rendimiento: $("mv-rend").value, detalle: $("mv-detalle").value.trim()||null,
+    };
+    $("mv-add").disabled=true;
+    DB.addMovimiento(mov).then(function(c){
+      fillMoneyFields(c); renderMovimientos(clientId);
+      $("mv-monto").value=""; $("mv-detalle").value="";
+      flash($("mov-msg"),"Movimiento registrado.",true);
+    }).catch(function(e){ flash($("mov-msg"),"Error: "+(e.message||e),false); })
+    .then(function(){ $("mv-add").disabled=false; });
+  });
 
   // ---- Settings ----
   function loadSettings(){ DB.getSettings().then(function(s){ if(!s) return;
